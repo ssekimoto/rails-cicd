@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: ruby-app
+      role: web
+  template:
+    metadata:
+      labels:
+        app: ruby-app
+        role: web
+    spec:
+      containers:
+      - name: rails
+        image: ruby:3.2-slim
+        command: 
+        - "ruby"
+        - "-rwebrick"
+        - "-e"
+        - |
+          server = WEBrick::HTTPServer.new(Port: 8080)
+          server.mount_proc('/') { |req, res| res.body = 'Hello from Ruby Web App on GKE!' }
+          trap('INT') { server.shutdown }
+          server.start
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ruby-web-svc
+spec:
+  type: LoadBalancer
+  selector:
+    app: ruby-app
+    role: web
+  ports:
+  - port: 80
+    targetPort: 8080

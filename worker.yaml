@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ruby-worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ruby-app
+      role: worker
+  template:
+    metadata:
+      labels:
+        app: ruby-app
+        role: worker
+    spec:
+      containers:
+      - name: rails
+        image: ruby:3.2-slim
+        command:
+        - "ruby"
+        - "-e"
+        - |
+          STDOUT.sync = true
+          puts 'Starting Ruby Worker...'
+          loop do
+            sleep 10
+            puts 'Worker is running...'
+          end
