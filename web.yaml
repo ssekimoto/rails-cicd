@@ -1,8 +1,8 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: default
   name: ruby-web
+  namespace: default
 spec:
   replicas: 2
   selector:
@@ -18,23 +18,28 @@ spec:
       containers:
       - name: rails
         image: ruby:3.2-slim
+        # WEBrickの代わりに標準の socket を使ってHTTP応答を返します
         command: 
         - "ruby"
-        - "-rwebrick"
+        - "-rsocket"
         - "-e"
         - |
-          server = WEBrick::HTTPServer.new(Port: 8080)
-          server.mount_proc('/') { |req, res| res.body = 'Hello from Ruby Web App on GKE!' }
-          trap('INT') { server.shutdown }
-          server.start
+          server = TCPServer.new(8080)
+          puts 'Starting Ruby Web Server on port 8080...'
+          loop do
+            client = server.accept
+            client.gets # リクエストを読み飛ばす
+            client.print "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nHello from Ruby Web App on GKE!\n"
+            client.close
+          end
         ports:
         - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: default
   name: ruby-web-svc
+  namespace: default
 spec:
   type: LoadBalancer
   selector:
